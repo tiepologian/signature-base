@@ -1,0 +1,13 @@
+alert http $HOME_NET any -> $EXTERNAL_NET any (
+    msg:"MALWARE-CNC Win.Infostealer.Vidar fake Firefox/156.0 User-Agent (turbo88ku)";
+    flow:established,to_server;
+    http_user_agent;
+    content:"Firefox/156.0",fast_pattern,nocase;
+    content:"rv:156.0";
+    content:"Gecko/20100101";
+    service:http;
+    reference:url,your-blog-url-here;
+    classtype:trojan-activity;
+    metadata:policy security-ips drop;
+    sid:9100001; rev:1;
+)
