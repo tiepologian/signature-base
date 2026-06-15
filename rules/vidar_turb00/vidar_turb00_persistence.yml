@@ -1,0 +1,44 @@
+title: Suspicious svchost ServiceDll in ProgramData (and Vidar turb00 campaign specifics)
+id: 2c9d6b41-5a8f-4e72-b3c0-1e9a7f4d2bb2
+status: experimental
+description: >
+    Generic behavioral detection for a svchost-shared service whose ServiceDll points into
+    C:\ProgramData (uncommon for legitimate services), plus the exact registry artifacts of the
+    turb00 (Vidar-class) persistence service CadenceOptimizer
+references:
+    - https://mrtiepolo.medium.com
+author: Gianluca Tiepolo
+date: 2026/06/15
+tags:
+    - attack.persistence
+    - attack.t1543.003
+    - attack.t1218.011
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    # Generic behavioral arm: ServiceDll under ProgramData is unusual
+    selection_generic_servicedll:
+        TargetObject|contains: '\Services\'
+        TargetObject|endswith: '\Parameters\ServiceDll'
+        Details|contains: 'C:\ProgramData\'
+    # Campaign-specific: ServiceDll value
+    selection_campaign_dll:
+        TargetObject|contains: '\Services\CadenceOptimizer\'
+        TargetObject|endswith: '\Parameters\ServiceDll'
+        Details|contains: 'CorsairUtil\agt.dll'
+    # Campaign-specific: ImagePath value
+    selection_campaign_imagepath:
+        TargetObject|contains: '\Services\CadenceOptimizer\'
+        TargetObject|endswith: '\ImagePath'
+        Details|contains: 'svchost.exe -k Brn_Agent'
+    # Campaign-specific: ServiceMain value
+    selection_campaign_servicemain:
+        TargetObject|contains: '\Services\CadenceOptimizer\'
+        TargetObject|endswith: '\Parameters\ServiceMain'
+        Details|contains: 'AllocatorRegister'
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate shared-process services normally place ServiceDll in System32, not ProgramData;
+      a ServiceDll under C:\ProgramData is unusual and warrants investigation.
+level: high
