@@ -6,7 +6,6 @@ alert http $HOME_NET any -> $EXTERNAL_NET any (
     content:"rv:156.0";
     content:"Gecko/20100101";
     service:http;
-    reference:url,your-blog-url-here;
     classtype:trojan-activity;
     metadata:policy security-ips drop;
     sid:9100001; rev:1;
