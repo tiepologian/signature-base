@@ -1,0 +1,41 @@
+title: Browser Launched Headless With App-Bound-Encryption Bypass Flags By Non-Browser Parent
+id: 5a1c7e92-6f3b-48d0-9c14-7b2e9a0d3c66
+status: experimental
+description: |
+    Generic behavioural detection. Modern stealers (Vidar, Lumma, and others)
+    defeat Chrome/Edge App-Bound Encryption by silently launching the real browser against the victim
+    profile with a minimal, headless-style command line ("--no-first-run --disable-gpu about:blank") to
+    have the browser itself decrypt cookies/credentials. This rule fires when chrome.exe / msedge.exe is
+    started with that flag combination by a parent that is not a browser, browser updater, or the shell.
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.credential_access
+    - attack.collection
+    - attack.t1555.003
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        Image|endswith:
+            - '\chrome.exe'
+            - '\msedge.exe'
+        CommandLine|contains|all:
+            - '--no-first-run'
+            - '--disable-gpu'
+            - 'about:blank'
+    filter_legit_parents:
+        ParentImage|endswith:
+            - '\explorer.exe'
+            - '\chrome.exe'
+            - '\msedge.exe'
+            - '\update.exe'
+            - '\MicrosoftEdgeUpdate.exe'
+            - '\GoogleUpdate.exe'
+            - '\updater.exe'
+    condition: selection and not filter_legit_parents
+falsepositives:
+    - Automation/test frameworks (Selenium, Puppeteer) and kiosk launchers that drive browsers headless.
+    - Enterprise scripts that pre-warm browser profiles.
+level: high

@@ -1,0 +1,46 @@
+title: Cross-Process Injection Precursor - Sensitive ProcessAccess From a User-Writable Binary
+id: 6f29e1b3-58c4-4d70-a8e1-927d3b04f2c5
+status: experimental
+description: |
+    Cross-process memory writes and remote-thread creation are the building blocks of every classical
+    injection / hollowing primitive (NtWriteVirtualMemory, NtMapViewOfSection-into-target,
+    CreateRemoteThread, SetThreadContext). Sysmon EID 10 records the OpenProcess that precedes them, with
+    the access mask requested. Detects a process whose own image is located in a user-writable directory
+    opening another process with a sensitive access mask (PROCESS_VM_WRITE / PROCESS_CREATE_THREAD /
+    PROCESS_ALL_ACCESS or close-to-all).
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.t1055
+logsource:
+    category: process_access
+    product: windows
+detection:
+    sensitive_access:
+        # PROCESS_ALL_ACCESS = 0x1FFFFF / 0x1F0FFF;  VM_WRITE = 0x20; CREATE_THREAD = 0x2; VM_OP = 0x8
+        GrantedAccess|contains:
+            - '0x1FFFFF'
+            - '0x1F0FFF'
+            - '0x1F1FFF'
+            - '0x143A'   # common SUSPEND|RESUME|VM_OP|VM_READ|VM_WRITE|QUERY_LIMITED combo
+    source_in_user_writable:
+        SourceImage|contains:
+            - '\AppData\Local\Temp\'
+            - '\AppData\Roaming\'
+            - '\ProgramData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+    filter_known_good:
+        SourceImage|endswith:
+            - '\MsMpEng.exe'           # Defender
+            - '\MpDefenderCoreService.exe'
+            - '\OneDrive.exe'
+            - '\Update.exe'
+            - '\Squirrel.exe'
+    condition: sensitive_access and source_in_user_writable and not filter_known_good
+falsepositives:
+    - Some installers and self-updaters legitimately use sensitive access masks against their own children.
+    - Sandboxing / debugging tools running from user paths.
+level: high

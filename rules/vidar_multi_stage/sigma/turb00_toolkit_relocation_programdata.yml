@@ -1,0 +1,29 @@
+title: HijackLoader Toolkit Relocation - Signed VPN Host + Trojanized Qt5Core Written to ProgramData
+id: 2f6b1c8d-7e94-4a0f-b3d6-58a1c9e02b77
+status: experimental
+description: |
+    The Turb00 orchestrator copies its side-load toolkit (the renamed signed Radmin VPN host plus its
+    trojanized Qt5Core.dll) into a random-word directory under C:\ProgramData\ and re-executes from there
+    for persistence. Detects the trojanized Qt5Core.dll / Radmin host being written under ProgramData -
+    a location where neither a genuine Radmin VPN nor a genuine Qt library is ever installed.
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.persistence
+    - attack.defense_evasion
+    - attack.t1574.002
+logsource:
+    category: file_event
+    product: windows
+detection:
+    location:
+        TargetFilename|startswith: 'C:\ProgramData\'
+    payload:
+        TargetFilename|endswith:
+            - '\Qt5Core.dll'
+            - '\RvRvpnGui.exe'
+            - '\WizardDa42.exe'
+    condition: location and payload
+falsepositives:
+    - Unusual third-party software that installs a Qt application under ProgramData (uncommon).
+level: high

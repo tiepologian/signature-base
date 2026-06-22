@@ -1,0 +1,36 @@
+title: Low-Visibility Persistence - Legacy .job Task or Startup Shortcut To a User-Writable Path
+id: d8f3a206-1b49-4c7e-8a51-90e2f3b4c5d6
+status: experimental
+description: |
+    Generic behavioural detection. Stealthy operators favour persistence
+    mechanisms that common hunting watches less closely: the legacy Task Scheduler 1.0 ".job" format
+    written to C:\Windows\Tasks (instead of the XML tasks under System32\Tasks), and logon Startup-folder
+    shortcuts. This rule fires on creation of a legacy .job task, or a Startup-folder .lnk created by a
+    process that is not a normal installer/shell. Pair with a follow-up check that the shortcut target
+    resolves into a user-writable directory (%TEMP% / %APPDATA% / %PROGRAMDATA%).
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.persistence
+    - attack.t1053.005
+    - attack.t1547.001
+logsource:
+    category: file_event
+    product: windows
+detection:
+    legacy_job_task:
+        TargetFilename|contains: '\Windows\Tasks\'
+        TargetFilename|endswith: '.job'
+    startup_shortcut:
+        TargetFilename|contains: '\Start Menu\Programs\Startup\'
+        TargetFilename|endswith: '.lnk'
+    filter_known_good:
+        Image|endswith:
+            - '\explorer.exe'
+            - '\msiexec.exe'
+            - '\OfficeClickToRun.exe'
+    condition: (legacy_job_task or startup_shortcut) and not filter_known_good
+falsepositives:
+    - Legitimate installers that add a Startup shortcut for newly-installed software.
+    - Legacy software that still registers Task Scheduler 1.0 (.job) tasks.
+level: medium

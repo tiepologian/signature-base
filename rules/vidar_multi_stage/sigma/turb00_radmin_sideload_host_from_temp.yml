@@ -1,0 +1,30 @@
+title: Radmin VPN (RvRvpnGui) Executing From a User-Writable Directory
+id: c4a8f013-9d2e-4b71-8c35-6f9012ab34cd
+status: experimental
+description: |
+    The Turb00 chain renames a legitimately signed Radmin VPN GUI (OriginalFileName RvRvpnGui.exe, e.g.
+    to WizardDa42.exe) and runs it from %TEMP% / %APPDATA% / %PROGRAMDATA% so it DLL side-loads a
+    trojanized Qt5Core.dll (HijackLoader). A genuine Radmin VPN runs from its Program Files install path.
+    Anchored on OriginalFileName so it survives the rename.
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.defense_evasion
+    - attack.t1574.002
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        OriginalFileName: 'RvRvpnGui.exe'
+    location:
+        Image|contains:
+            - '\AppData\Local\Temp\'
+            - '\AppData\Roaming\'
+            - '\ProgramData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+    condition: selection and location
+falsepositives:
+    - Rare portable / non-standard Radmin VPN deployments run from a user directory.
+level: high

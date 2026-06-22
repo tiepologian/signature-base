@@ -1,0 +1,26 @@
+title: Process Image Tampering - Hollowing / Doppelganging / Herpaderping / Ghosting (Sysmon EID 25)
+id: 1a72b9f4-3c50-4e8b-91d2-6b04f7d8c9aa
+status: experimental
+description: |
+    Sysmon EID 25 fires when a running process's in-memory image diverges from its on-disk executable.
+    That divergence is the defining symptom of *every* member of the process-hollowing family - classical
+    hollowing, Process Doppelganging, Process Herpaderping, Process Ghosting, and PEB-redirect variants.
+    This rule needs Sysmon >= v13 with process-tampering monitoring enabled.
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.defense_evasion
+    - attack.t1055.012
+logsource:
+    category: process_tampering
+    product: windows
+detection:
+    selection:
+        Type|contains:
+            - 'Image is replaced'         # classical hollowing / PEB redirect
+            - 'Image is overwritten'      # Herpaderping / on-disk rewrite after process start
+    condition: selection
+falsepositives:
+    - Legitimate self-updaters that swap their own executable after launch (rare; usually 'Image is overwritten').
+    - Some packers / DRM that decompress their main module in place.
+level: high

@@ -1,0 +1,29 @@
+title: Operation Turb00 HijackLoader/Vidar Persistence Artifacts
+id: 7b3d9e21-4c6a-4f18-9a2b-1e5c8d0f3a44
+status: experimental
+description: |
+    Detects host-based persistence artifacts dropped by the Turb00 HijackLoader -> Vidar 2.1 chain:
+    a logon Startup shortcut, a legacy ".job" scheduled task in C:\Windows\Tasks, and the
+    "extadvanced_arm64" toolkit/install directory under ProgramData/AppData. These exact filenames are
+    build-specific and may rotate between campaigns; the structural pattern (Startup .lnk + legacy .job +
+    a random-word install dir holding a renamed signed binary) is the durable signal.
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.persistence
+    - attack.t1547.001
+    - attack.t1053.005
+logsource:
+    category: file_event
+    product: windows
+detection:
+    startup_lnk:
+        TargetFilename|endswith: '\Programs\Startup\prompt_analyzer_debug.lnk'
+    legacy_job:
+        TargetFilename|endswith: '\Windows\Tasks\socket_dispatcher_v2.job'
+    install_dir:
+        TargetFilename|contains: '\extadvanced_arm64\'
+    condition: 1 of them
+falsepositives:
+    - None expected; the indicators are specific to this campaign build.
+level: critical

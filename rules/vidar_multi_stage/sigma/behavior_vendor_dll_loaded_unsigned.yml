@@ -1,0 +1,42 @@
+title: Vendor-Named DLL Loaded With Missing or Invalid Signature (DLL Side-Loading)
+id: 9e02d4a1-3b8c-4d65-a7f0-12c3e4d5f678
+status: experimental
+description: |
+    Generic behavioural detection. DLL side-loading and trojanized-library abuse hide attacker code inside
+    a library that *impersonates* a known signed component.
+    This rule fires when a DLL whose name matches a widely-distributed signed library (Qt, Edge WebView2, the MSVC
+    runtime, Opera, etc.) is loaded WITHOUT a valid Authenticode signature - the fingerprint of a tampered
+    or planted copy. The loading process is typically a legitimately-signed application, so the anomaly is
+    the *loaded module*, not the process. Requires image-load logging with signature verification
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.defense_evasion
+    - attack.execution
+    - attack.t1574.002
+logsource:
+    category: image_load
+    product: windows
+detection:
+    vendor_dll:
+        ImageLoaded|endswith:
+            - '\Qt5Core.dll'
+            - '\Qt5Gui.dll'
+            - '\Qt5Network.dll'
+            - '\Qt5Widgets.dll'
+            - '\Qt5Svg.dll'
+            - '\Qt5WinExtras.dll'
+            - '\WebView2Loader.dll'
+            - '\opera_elf.dll'
+            - '\msvcp140.dll'
+            - '\msvcp_win.dll'
+            - '\vcruntime140.dll'
+            - '\ucrtbase.dll'
+    filter_valid_signature:
+        Signed: 'true'
+        SignatureStatus: 'Valid'
+    condition: vendor_dll and not filter_valid_signature
+falsepositives:
+    - Self-built / open-source applications that ship unsigned copies of Qt or the MSVC runtime.
+    - Developer machines and CI build agents.
+level: high

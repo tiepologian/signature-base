@@ -1,0 +1,37 @@
+title: Executable Image Loaded From a Temp/AppData ".tmp" File
+id: 8d4f02a7-1e6b-4c30-be94-3a52f6c4d1e8
+status: experimental
+description: |
+    The Windows loader treats anything mapped with SEC_IMAGE as an executable module, regardless of file
+    extension. Process hollowing variants and reflective injectors routinely stage their payload as a
+    random ".tmp" file (often in a user-writable directory) and map that file as a SEC_IMAGE into the
+    target. Detects image-load events (Sysmon EID 7) where the loaded module is a ".tmp" file in a
+    user-writable directory.
+author: Gianluca Tiepolo
+date: 2026/06/20
+tags:
+    - attack.defense_evasion
+    - attack.execution
+    - attack.t1055.012
+logsource:
+    category: image_load
+    product: windows
+detection:
+    tmp_image:
+        ImageLoaded|endswith: '.tmp'
+    user_writable:
+        ImageLoaded|contains:
+            - '\AppData\Local\Temp\'
+            - '\AppData\Roaming\'
+            - '\ProgramData\'
+            - '\Users\Public\'
+    filter_known_good:
+        Image|endswith:
+            # Squirrel/Electron updater patterns map their own .tmp shims
+            - '\Update.exe'
+            - '\Squirrel.exe'
+    condition: tmp_image and user_writable and not filter_known_good
+falsepositives:
+    - Squirrel/Electron-based application updaters that load .tmp shims during update.
+    - Click-to-Run / certain installers that stage transient modules.
+level: high
